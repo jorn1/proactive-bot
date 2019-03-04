@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+//todo Clean this up
 namespace ContentmentBot.State
 {
     public class Accessors

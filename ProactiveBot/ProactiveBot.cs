@@ -40,21 +40,17 @@ namespace ProactiveBot
         /// </summary>                        
         public ProactiveBot(Accessors accessors)
         {
+
+            _accessors = accessors ?? throw new System.ArgumentNullException(nameof(accessors));
             _dialogSet = new DialogSet(_accessors.DialogStateAccessor);
-
-
             _dialogSet.Add(new ChoicePrompt(FirstPrompt));
             _dialogSet.Add(new TextPrompt(SecondPrompt, Validator));
-            _dialogSet.Add(new NumberPrompt<int>(ThirdPrompt, Validator));
-
-
 
             WaterfallStep[] stepsExampleWaterfallDialog = new WaterfallStep[]
             {
                             FirstPromptAsync,
                             SecondPromptAsync,
-                            ThirdPromptAsync,
-                            LastStepUserProfileWaterfallDialogAsync,
+                            //LastStepExampleWaterfallDialogAsync,
             };
 
 
@@ -85,8 +81,9 @@ namespace ProactiveBot
                         {
                             await turnContext.SendActivityAsync("Welcome");
                             await turnContext.SendActivityAsync("Send \"1\" to set this conversation as the receiving conversation (store ConversationReference)");
-                            await turnContext.SendActivityAsync("Send \"2\" to start a dialog.");
-                            await turnContext.SendActivityAsync("Send \"3[your message]\" to send a message.");
+                            await turnContext.SendActivityAsync("Send \"2[your message]\" to send a message.");
+                            await turnContext.SendActivityAsync("Send \"3\" to start a dialog.");
+
                         }
                     }
                 }
@@ -127,7 +124,7 @@ namespace ProactiveBot
                     // Use the ContinueConversationAsync method on the BotAdapter and pass the receiving conversation's ConversationReference
                     await turnContext.Adapter.ContinueConversationAsync("123", conversationReference, CreateCallbackDialog(), cancellationToken);
                 }
-
+                // todo hier gebleven logic toevoegen voor continueDialog
                 //else
                 //{
                 //    DialogContext dc = await _dialogSet.CreateContextAsync(turnContext, cancellationToken);
@@ -167,6 +164,7 @@ namespace ProactiveBot
         {
             //// [Template] store result from the previous step.
             //stepContext.Values["result"] = stepContext.Result;
+            // todo remove this
 
             return await stepContext.PromptAsync(
                 FirstPrompt,
@@ -181,10 +179,9 @@ namespace ProactiveBot
 
         private async Task<DialogTurnResult> SecondPromptAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken = default(CancellationToken))
         {
-            // Prompt for the users name. The result of the prompt is returned to the next step of the waterfall.
             return await stepContext.PromptAsync(SecondPrompt, new PromptOptions
             {
-                Prompt = MessageFactory.Text("This is a prompt"),
+                Prompt = MessageFactory.Text("This is a TextPrompt"),
                 RetryPrompt = MessageFactory.Text("Please try again")
             },
             cancellationToken
@@ -193,7 +190,7 @@ namespace ProactiveBot
 
         private async Task<bool> Validator(PromptValidatorContext<string> promptContext, CancellationToken cancellationToken)
         {
-            // Validator will always return true for simplicity
+            // Validator will always return true for simplicity's sake
             return await Task.FromResult(true);
         }
     }
