@@ -2,20 +2,16 @@
 // Licensed under the MIT License.
 
 using System;
-using System.IO;
+
 using System.Linq;
-using ContentmentBot.State;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Bot.Builder;
-using Microsoft.Bot.Builder.Dialogs;
-using Microsoft.Bot.Builder.Integration;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Configuration;
 using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace ProactiveBot
 {
@@ -74,53 +70,6 @@ namespace ProactiveBot
                {
                    await context.SendActivityAsync("Sorry, it looks like something went wrong.");
                };
-
-               // The Memory Storage used here is for local bot debugging only. When the bot
-               // is restarted, everything stored in memory will be gone.
-               IStorage dataStore = new MemoryStorage();
-
-               // Create conversation and user state with CosmosDB storage provider.
-               ConversationState conversationState = new ConversationState(dataStore);
-               UserState userState = new UserState(dataStore);
-
-               options.State.Add(conversationState);
-               options.State.Add(userState);  
-            });
-
-            // Create and register state accessors.
-            // Accessors created here are passed into the IBot-derived class on every turn.
-            services.AddSingleton<Accessors>(sp =>
-            {
-                var options = sp.GetRequiredService<IOptions<BotFrameworkOptions>>().Value;
-                if (options == null)
-                {
-                    throw new InvalidOperationException("BotFrameworkOptions must be configured prior to setting up the state accessors");
-                }
-
-                var conversationState = options.State.OfType<ConversationState>().FirstOrDefault();
-                if (conversationState == null)
-                {
-                    throw new InvalidOperationException("ConversationState must be defined and added before adding conversation-scoped state accessors.");
-                }
-
-                var userState = options.State.OfType<UserState>().FirstOrDefault();
-                if (userState == null)
-                {
-                    throw new InvalidOperationException("UserState must be defined and added before adding conversation-scoped state accessors.");
-                }
-
-                // Create the custom state accessor.
-                // State accessors enable other components to read and write individual properties of state.
-                var accessors = new Accessors(conversationState, userState)
-                {
-                    ConversationDataAccessor = conversationState.CreateProperty<ConversationData>(Accessors.ConversationDataName),
-                    UserProfileAccessor = userState.CreateProperty<UserProfile>(Accessors.UserProfileName),
-
-                    DialogStateAccessor = conversationState.CreateProperty<DialogState>(Accessors.DialogStateName),
-                    ContentmentAccessor = conversationState.CreateProperty<Contentment>(Accessors.ContentmentName),
-                };
-
-                return accessors;
             });
         }
 

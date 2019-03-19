@@ -1,14 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using ContentmentBot.State;
 using Microsoft.Bot.Builder;
-using Microsoft.Bot.Builder.Dialogs;
-using Microsoft.Bot.Builder.Dialogs.Choices;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
 
@@ -26,36 +22,11 @@ namespace ProactiveBot
     /// <seealso cref="https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection?view=aspnetcore-2.1"/>
     public class ProactiveBot : IBot
     {
-        private const string ExampleWaterfallDialog = "exampleWaterfallDialog";
-        private const string FirstPrompt = "firstPrompt";
-        private const string SecondPrompt = "secondPrompt";
-        private const string ThirdPrompt = "thirdPrompt";
-
-        private readonly Accessors _accessors;
-        private readonly DialogSet _dialogSet;
-        private Activity externalActivity;
-
         /// <summary>
         /// Initializes a new instance of the class.
         /// </summary>                        
-        public ProactiveBot(Accessors accessors)
+        public ProactiveBot()
         {
-
-            _accessors = accessors ?? throw new System.ArgumentNullException(nameof(accessors));
-            _dialogSet = new DialogSet(_accessors.DialogStateAccessor);
-            _dialogSet.Add(new ChoicePrompt(FirstPrompt));
-            _dialogSet.Add(new TextPrompt(SecondPrompt, Validator));
-
-            WaterfallStep[] stepsExampleWaterfallDialog = new WaterfallStep[]
-            {
-                            FirstPromptAsync,
-                            SecondPromptAsync,
-                            //LastStepExampleWaterfallDialogAsync,
-            };
-
-
-            _dialogSet.Add(new WaterfallDialog(ExampleWaterfallDialog, stepsExampleWaterfallDialog));
-
         }
 
         /// <summary>
@@ -81,9 +52,7 @@ namespace ProactiveBot
                         {
                             await turnContext.SendActivityAsync("Welcome");
                             await turnContext.SendActivityAsync("Send \"1\" to set this conversation as the receiving conversation (store ConversationReference)");
-                            await turnContext.SendActivityAsync("Send \"2[your message]\" to send a message.");
-                            await turnContext.SendActivityAsync("Send \"3\" to start a dialog.");
-
+                            await turnContext.SendActivityAsync("Send \"[your message]\" to send a message to the receiving conversation.");
                         }
                     }
                 }
@@ -99,99 +68,25 @@ namespace ProactiveBot
                     File.WriteAllText(@"./ConversationReference.json", JsonConvert.SerializeObject(conversationReference));
                 }
 
-                // Send the text after "2" as a message.
-                else if (turnContext.Activity.Text.StartsWith("2"))
+                // Send Activity.Text to receiving conversation (stored ConversationReference). 
+                else
                 {
                     // Get conversationreference from file
                     ConversationReference conversationReference = JsonConvert.DeserializeObject<ConversationReference>(File.ReadAllText(@"./ConversationReference.json"));
 
-                    // Store the activity as a member variable
-                    externalActivity = turnContext.Activity;
-
                     // Use the ContinueConversationAsync method on the BotAdapter and pass the receiving conversation's ConversationReference
-                    await turnContext.Adapter.ContinueConversationAsync("ProactiveBot", conversationReference, CreateCallbackMessage(), cancellationToken);
+                    await turnContext.Adapter.ContinueConversationAsync("ProactiveBot", conversationReference, CreateCallbackMessage(turnContext.Activity.Text), cancellationToken);
                 }
-
-                // Activate a dialog inside the receiving conversation
-                else if (turnContext.Activity.Text.StartsWith("3"))
-                {
-                    // Get conversationreference from file
-                    ConversationReference conversationReference = JsonConvert.DeserializeObject<ConversationReference>(File.ReadAllText(@"./ConversationReference.json"));
-
-                    // Store the activity as a member variable
-                    externalActivity = turnContext.Activity;
-
-                    // Use the ContinueConversationAsync method on the BotAdapter and pass the receiving conversation's ConversationReference
-                    await turnContext.Adapter.ContinueConversationAsync("123", conversationReference, CreateCallbackDialog(), cancellationToken);
-                }
-                // todo hier gebleven logic toevoegen voor continueDialog
-                //else
-                //{
-                //    DialogContext dc = await _dialogSet.CreateContextAsync(turnContext, cancellationToken);
-
-                //    if (dc.Stack.Exists(dialog => dialog.Id == ExampleWaterfallDialog))
-                //    {
-                //        await dc.BeginDialogAsync(ExampleWaterfallDialog, null, cancellationToken);
-                //    }
-                //}
-
-                // if dialog stack heeft een dialog 
-                // start dialog
             }
         }
 
         // BotCallbackHandler for sending a message.
-        private BotCallbackHandler CreateCallbackMessage()
+        private BotCallbackHandler CreateCallbackMessage(string message)
         {
             return async (turnContext, token) =>
             {
-                await turnContext.SendActivityAsync(this.externalActivity.Text.Substring(1));
+                await turnContext.SendActivityAsync(message);
             };
-        }
-
-        // BotCallBackHandler for activating a dialog
-        private BotCallbackHandler CreateCallbackDialog()
-        {
-            return async (turnContext, cancellationToken) =>
-            {
-                // Activate ExampleWaterfall dialog
-                    DialogContext dc = await _dialogSet.CreateContextAsync(turnContext, cancellationToken);
-                    await dc.BeginDialogAsync(ExampleWaterfallDialog, null, cancellationToken);
-            };
-        }
-
-        private async Task<DialogTurnResult> FirstPromptAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            //// [Template] store result from the previous step.
-            //stepContext.Values["result"] = stepContext.Result;
-            // todo remove this
-
-            return await stepContext.PromptAsync(
-                FirstPrompt,
-                new PromptOptions
-                {
-                    Prompt = MessageFactory.Text("Make a choice."),
-                    RetryPrompt = MessageFactory.Text("Try making a choice again."),
-                    Choices = ChoiceFactory.ToChoices(new List<string> { "Yes", "No" }),
-                },
-                cancellationToken);
-        }
-
-        private async Task<DialogTurnResult> SecondPromptAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return await stepContext.PromptAsync(SecondPrompt, new PromptOptions
-            {
-                Prompt = MessageFactory.Text("This is a TextPrompt"),
-                RetryPrompt = MessageFactory.Text("Please try again")
-            },
-            cancellationToken
-            );
-        }
-
-        private async Task<bool> Validator(PromptValidatorContext<string> promptContext, CancellationToken cancellationToken)
-        {
-            // Validator will always return true for simplicity's sake
-            return await Task.FromResult(true);
         }
     }
 }

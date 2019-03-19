@@ -1,6 +1,6 @@
 ﻿# ProactiveBot
 
-A simple Microsoft Bot Framework v4 bot that demonstrates proactivity through the IBotAdapter.ContinueConversationAsync function.
+A simple Microsoft Bot Framework v4 bot that demonstrates proactivity through the IBotAdapter.ContinueConversationAsync() method.
 
 # Prerequisites
 - [Visual Studio 2017 15.7][2] or newer installed.
