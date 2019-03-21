@@ -71,7 +71,7 @@ namespace ProactiveBot
                 // Send Activity.Text to receiving conversation (stored ConversationReference). 
                 else
                 {
-                    // Get conversationreference from file
+                    // Get stored ConversationReference from file.
                     ConversationReference conversationReference = JsonConvert.DeserializeObject<ConversationReference>(File.ReadAllText(@"./ConversationReference.json"));
 
                     // Use the ContinueConversationAsync method on the BotAdapter and pass the receiving conversation's ConversationReference
