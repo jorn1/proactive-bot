@@ -2,7 +2,9 @@
 
 A simple Microsoft Bot Framework v4 bot that demonstrates proactivity through the IBotAdapter.ContinueConversationAsync() method.
 
-A ConversationReference can be stored by typing '1'. This ConversationReference can be used in another conversation (or the same conversation) to send a message to the conversation which the stored ConversationReference represents.
+A ConversationReference can be stored by typing '1'.
+This ConversationReference can be used in another conversation (or the same conversation),
+to send a message to the conversation which the stored ConversationReference represents.
 
 # Prerequisites
 - [Visual Studio 2017 15.7][2] or newer installed.
